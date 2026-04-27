@@ -1,4 +1,4 @@
-export type Platform = 'gmail' | 'slack' | 'granola';
+export type Platform = 'gmail';
 
 export interface Message {
   id: string;

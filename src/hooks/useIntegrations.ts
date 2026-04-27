@@ -24,20 +24,6 @@ function getDefaultIntegrations(): Integration[] {
       lastSyncedAt: null,
       platformMetadata: {},
     },
-    {
-      id: 'int-slack',
-      platform: 'slack',
-      status: 'disconnected',
-      lastSyncedAt: null,
-      platformMetadata: {},
-    },
-    {
-      id: 'int-granola',
-      platform: 'granola',
-      status: 'disconnected',
-      lastSyncedAt: null,
-      platformMetadata: {},
-    },
   ];
 }
 

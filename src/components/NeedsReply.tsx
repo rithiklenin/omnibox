@@ -126,7 +126,7 @@ export function NeedsReply({
 
         {/* Source filters */}
         <div className="flex items-center gap-1">
-          {(['gmail', 'slack', 'granola'] as const).map((platform) => {
+          {(['gmail'] as const).map((platform) => {
             const count = actions.filter((a) => a.sourcePlatform === platform).length;
             if (count === 0) return null;
             return (

@@ -9,7 +9,6 @@ import { mockActions } from '../data/actions';
 import { AskOmni } from '../components/AskOmni';
 import { NeedsReply } from '../components/NeedsReply';
 import { TaskBoard } from '../components/TaskBoard';
-import type { ActionItem } from '../types';
 
 type ActiveView = 'ask_omni' | 'needs_reply' | 'task_board';
 

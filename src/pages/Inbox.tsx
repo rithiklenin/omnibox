@@ -38,8 +38,6 @@ export function Inbox() {
     const counts: Record<Platform | 'all', number> = {
       all: 0,
       gmail: 0,
-      slack: 0,
-      granola: 0,
     };
 
     mockMessages.forEach((message) => {

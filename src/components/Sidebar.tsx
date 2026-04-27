@@ -48,7 +48,7 @@ function CollapsibleSection({ title, defaultOpen = true, children }: Collapsible
   );
 }
 
-const platforms: (Platform | 'all')[] = ['all', 'gmail', 'slack', 'granola'];
+const platforms: (Platform | 'all')[] = ['all', 'gmail'];
 
 export function Sidebar({ activeFilter, onFilterChange, unreadCounts, isOpen, onClose }: SidebarProps) {
   return (

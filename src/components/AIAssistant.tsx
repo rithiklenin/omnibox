@@ -62,11 +62,11 @@ function generateAIResponse(prompt: string, message: Message | null, allMessages
     return `**Your Day Plan:**\n\n` +
       `Based on your inbox, here's a suggested priority order:\n\n` +
       `**Morning (High Priority):**\n` +
-      `• Respond to ${unreadMessages.filter(m => m.platform === 'email').length} unread emails\n` +
-      `• Check Slack for any urgent team updates\n\n` +
+      `• Respond to ${unreadMessages.filter(m => m.platform === 'gmail').length} unread emails\n` +
+      `• Check for any urgent items\n\n` +
       `**Afternoon (Medium Priority):**\n` +
-      `• Review LinkedIn messages for networking opportunities\n` +
-      `• Respond to WhatsApp conversations\n\n` +
+      `• Review messages for opportunities\n` +
+      `• Follow up on pending items\n\n` +
       `**End of Day:**\n` +
       `• Archive processed messages\n` +
       `• Set reminders for follow-ups\n\n` +
@@ -80,10 +80,7 @@ function generateAIResponse(prompt: string, message: Message | null, allMessages
     }
     return `**Summary of ${unreadMessages.length} Unread Messages:**\n\n` +
       `**By Platform:**\n` +
-      `• Email: ${unreadMessages.filter(m => m.platform === 'email').length} unread\n` +
-      `• Slack: ${unreadMessages.filter(m => m.platform === 'slack').length} unread\n` +
-      `• WhatsApp: ${unreadMessages.filter(m => m.platform === 'whatsapp').length} unread\n` +
-      `• LinkedIn: ${unreadMessages.filter(m => m.platform === 'linkedin').length} unread\n\n` +
+      `• Gmail: ${unreadMessages.filter(m => m.platform === 'gmail').length} unread\n\n` +
       `**Key Topics:**\n` +
       unreadMessages.slice(0, 3).map(m => `• ${m.sender.name}: ${m.subject || m.preview.slice(0, 40) + '...'}`).join('\n') +
       `\n\n*Select a message for detailed AI assistance.*`;

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Integration, Platform } from '../../types';
 
 interface IntegrationCardProps {
@@ -8,7 +9,7 @@ interface IntegrationCardProps {
 
 const platformConfig: Record<
   Platform,
-  { name: string; description: string; color: string; icon: JSX.Element }
+  { name: string; description: string; color: string; icon: ReactNode }
 > = {
   gmail: {
     name: 'Gmail',
@@ -18,39 +19,6 @@ const platformConfig: Record<
       <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
         <path d="M20 18h-2V9.25L12 13 6 9.25V18H4V6h1.2l6.8 4.25L18.8 6H20v12z" fill="#EA4335" />
         <rect x="2" y="4" width="20" height="16" rx="2" stroke="#EA4335" strokeWidth="1.5" fill="none" />
-      </svg>
-    ),
-  },
-  slack: {
-    name: 'Slack',
-    description: 'Connect Slack to monitor channels and direct messages',
-    color: 'purple',
-    icon: (
-      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
-        <path d="M14.5 2a1.5 1.5 0 100 3h1.5v1.5a1.5 1.5 0 103 0V3.5a1.5 1.5 0 00-1.5-1.5h-3z" fill="#E01E5A" />
-        <path d="M2 14.5a1.5 1.5 0 013 0V16h1.5a1.5 1.5 0 010 3H3.5A1.5 1.5 0 012 17.5v-3z" fill="#36C5F0" />
-        <path d="M9.5 22a1.5 1.5 0 100-3H8v-1.5a1.5 1.5 0 10-3 0v3A1.5 1.5 0 006.5 22h3z" fill="#2EB67D" />
-        <path d="M22 9.5a1.5 1.5 0 01-3 0V8h-1.5a1.5 1.5 0 010-3h3A1.5 1.5 0 0122 6.5v3z" fill="#ECB22E" />
-        <path d="M5 9.5A1.5 1.5 0 016.5 8H8V6.5a1.5 1.5 0 113 0v3A1.5 1.5 0 019.5 11h-3A1.5 1.5 0 015 9.5z" fill="#36C5F0" />
-        <path d="M14.5 19a1.5 1.5 0 01-1.5-1.5V16h1.5a1.5 1.5 0 010 3z" fill="#2EB67D" />
-        <path d="M19 14.5a1.5 1.5 0 01-1.5 1.5H16v-1.5a1.5 1.5 0 113 0z" fill="#ECB22E" />
-        <path d="M9.5 5A1.5 1.5 0 0111 6.5V8H9.5a1.5 1.5 0 010-3z" fill="#E01E5A" />
-      </svg>
-    ),
-  },
-  granola: {
-    name: 'Granola',
-    description: 'Import meeting notes from Granola via email forwarding',
-    color: 'amber',
-    icon: (
-      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-          stroke="#F59E0B"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
       </svg>
     ),
   },
