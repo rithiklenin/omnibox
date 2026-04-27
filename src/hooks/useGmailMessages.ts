@@ -80,7 +80,7 @@ export function useGmailMessages() {
 
     try {
       const listRes = await fetch(
-        'https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread+in:inbox&maxResults=20',
+        'https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread+in:inbox+category:primary&maxResults=20',
         { headers: { Authorization: `Bearer ${googleAccessToken}` } }
       );
 
