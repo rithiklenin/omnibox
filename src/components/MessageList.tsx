@@ -54,7 +54,7 @@ export function MessageList({ messages, selectedMessageId, onSelectMessage }: Me
                     {message.sender.name}
                   </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                    {formatRelativeTime(message.timestamp)}
+                    {formatRelativeTime(message.receivedAt)}
                   </span>
                 </div>
 

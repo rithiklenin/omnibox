@@ -1,10 +1,11 @@
 import type { Message } from '../types';
 
 export const mockMessages: Message[] = [
-  // Email messages
   {
-    id: 'email-1',
-    platform: 'email',
+    id: 'gmail-1',
+    platform: 'gmail',
+    externalId: 'msg-001',
+    threadId: 'thread-001',
     sender: {
       name: 'Sarah Chen',
       email: 'sarah.chen@techcorp.com',
@@ -24,23 +25,23 @@ Let me know if you need any clarification.
 
 Best regards,
 Sarah`,
-    timestamp: '2024-01-15T10:30:00Z',
+    receivedAt: '2024-01-15T10:30:00Z',
     isUnread: true,
     thread: [
       {
-        id: 'email-1-1',
+        id: 'gmail-1-1',
         sender: { name: 'Sarah Chen' },
         content: 'Hi, I wanted to follow up on the proposal we discussed last week.',
         timestamp: '2024-01-15T10:30:00Z',
       },
       {
-        id: 'email-1-2',
+        id: 'gmail-1-2',
         sender: { name: 'You', isMe: true },
-        content: 'Thanks Sarah, I\'ll take a look at it today.',
+        content: "Thanks Sarah, I'll take a look at it today.",
         timestamp: '2024-01-15T11:00:00Z',
       },
       {
-        id: 'email-1-3',
+        id: 'gmail-1-3',
         sender: { name: 'Sarah Chen' },
         content: 'Great! Let me know if you have any questions.',
         timestamp: '2024-01-15T11:15:00Z',
@@ -48,8 +49,10 @@ Sarah`,
     ],
   },
   {
-    id: 'email-2',
-    platform: 'email',
+    id: 'gmail-2',
+    platform: 'gmail',
+    externalId: 'msg-002',
+    threadId: 'thread-002',
     sender: {
       name: 'Mike Johnson',
       email: 'mike.j@designstudio.io',
@@ -71,12 +74,14 @@ Thank you for your business!
 
 Mike Johnson
 Design Studio`,
-    timestamp: '2024-01-15T09:15:00Z',
+    receivedAt: '2024-01-15T09:15:00Z',
     isUnread: false,
   },
   {
-    id: 'email-3',
-    platform: 'email',
+    id: 'gmail-3',
+    platform: 'gmail',
+    externalId: 'msg-003',
+    threadId: 'thread-003',
     sender: {
       name: 'Newsletter',
       email: 'news@techweekly.com',
@@ -93,21 +98,22 @@ Top Stories:
 Read more on our website.
 
 Unsubscribe | Update preferences`,
-    timestamp: '2024-01-14T08:00:00Z',
+    receivedAt: '2024-01-14T08:00:00Z',
     isUnread: true,
   },
-
-  // Slack messages
   {
     id: 'slack-1',
     platform: 'slack',
+    externalId: 'msg-004',
+    threadId: 'thread-004',
     sender: {
       name: 'Alex Rivera',
     },
     subject: '#dev-team',
+    channelName: 'dev-team',
     preview: 'Hey team! Just pushed the latest updates to staging. Can someone review the PR?',
     content: 'Hey team! Just pushed the latest updates to staging. Can someone review the PR? I made some significant changes to the authentication flow.',
-    timestamp: '2024-01-15T11:45:00Z',
+    receivedAt: '2024-01-15T11:45:00Z',
     isUnread: true,
     thread: [
       {
@@ -125,27 +131,23 @@ Unsubscribe | Update preferences`,
       {
         id: 'slack-1-3',
         sender: { name: 'You', isMe: true },
-        content: 'I\'ll also review it after Jordan.',
+        content: "I'll also review it after Jordan.",
         timestamp: '2024-01-15T11:52:00Z',
-      },
-      {
-        id: 'slack-1-4',
-        sender: { name: 'Alex Rivera' },
-        content: 'Awesome, thanks both! Let me know if you have questions.',
-        timestamp: '2024-01-15T11:55:00Z',
       },
     ],
   },
   {
     id: 'slack-2',
     platform: 'slack',
+    externalId: 'msg-005',
+    threadId: 'thread-005',
     sender: {
       name: 'Emma Wilson',
     },
     subject: 'Direct Message',
     preview: 'Quick question - are you available for a call at 2pm?',
     content: 'Quick question - are you available for a call at 2pm? I wanted to discuss the client feedback we received.',
-    timestamp: '2024-01-15T10:00:00Z',
+    receivedAt: '2024-01-15T10:00:00Z',
     isUnread: false,
     thread: [
       {
@@ -157,145 +159,77 @@ Unsubscribe | Update preferences`,
       {
         id: 'slack-2-2',
         sender: { name: 'You', isMe: true },
-        content: 'Sure! I\'ll be available. Google Meet or Zoom?',
+        content: "Sure! I'll be available. Google Meet or Zoom?",
         timestamp: '2024-01-15T10:05:00Z',
-      },
-      {
-        id: 'slack-2-3',
-        sender: { name: 'Emma Wilson' },
-        content: 'Let\'s do Google Meet. I\'ll send the invite.',
-        timestamp: '2024-01-15T10:07:00Z',
       },
     ],
   },
   {
     id: 'slack-3',
     platform: 'slack',
+    externalId: 'msg-006',
+    threadId: 'thread-006',
     sender: {
       name: 'Bot',
     },
     subject: '#general',
+    channelName: 'general',
     preview: 'Reminder: Team standup in 15 minutes!',
     content: 'Reminder: Team standup in 15 minutes! Join us in the main conference room or via the Zoom link.',
-    timestamp: '2024-01-15T08:45:00Z',
-    isUnread: false,
-  },
-
-  // WhatsApp messages
-  {
-    id: 'whatsapp-1',
-    platform: 'whatsapp',
-    sender: {
-      name: 'David Park',
-    },
-    preview: 'The meeting location changed - we\'re now at the coffee shop on 5th street',
-    content: 'The meeting location changed - we\'re now at the coffee shop on 5th street. See you there!',
-    timestamp: '2024-01-15T12:00:00Z',
-    isUnread: true,
-    thread: [
-      {
-        id: 'whatsapp-1-1',
-        sender: { name: 'David Park' },
-        content: 'Hey, are we still meeting today?',
-        timestamp: '2024-01-15T11:30:00Z',
-      },
-      {
-        id: 'whatsapp-1-2',
-        sender: { name: 'You', isMe: true },
-        content: 'Yes! Looking forward to it. Same place?',
-        timestamp: '2024-01-15T11:45:00Z',
-      },
-      {
-        id: 'whatsapp-1-3',
-        sender: { name: 'David Park' },
-        content: 'The meeting location changed - we\'re now at the coffee shop on 5th street. See you there!',
-        timestamp: '2024-01-15T12:00:00Z',
-      },
-    ],
-  },
-  {
-    id: 'whatsapp-2',
-    platform: 'whatsapp',
-    sender: {
-      name: 'Lisa Thompson',
-    },
-    preview: 'Thanks for the recommendation! I\'ll check it out this weekend.',
-    content: 'Thanks for the recommendation! I\'ll check it out this weekend. Have you tried their brunch menu?',
-    timestamp: '2024-01-14T18:30:00Z',
+    receivedAt: '2024-01-15T08:45:00Z',
     isUnread: false,
   },
   {
-    id: 'whatsapp-3',
-    platform: 'whatsapp',
+    id: 'granola-1',
+    platform: 'granola',
+    externalId: 'msg-007',
+    threadId: 'thread-007',
     sender: {
-      name: 'Project Group',
+      name: 'Granola',
     },
-    preview: 'Shared a document: Final_Presentation.pdf',
-    content: 'I just shared the final presentation document. Please review before tomorrow\'s meeting!',
-    timestamp: '2024-01-14T16:00:00Z',
+    subject: 'Meeting Notes: Q2 Planning',
+    preview: 'Key decisions: Launch new product line by end of Q2, allocate 30% of budget to marketing...',
+    content: `Meeting Notes: Q2 Planning
+Date: Jan 15, 2024
+Attendees: Sarah, Mike, Alex, You
+
+Key Decisions:
+- Launch new product line by end of Q2
+- Allocate 30% of budget to marketing
+- Hire 3 additional engineers
+
+Action Items:
+- You: Draft product spec by Jan 22
+- Sarah: Prepare marketing budget breakdown
+- Mike: Create hiring pipeline
+
+Next Meeting: Jan 22, 2024`,
+    receivedAt: '2024-01-15T14:00:00Z',
     isUnread: true,
   },
-
-  // LinkedIn messages
   {
-    id: 'linkedin-1',
-    platform: 'linkedin',
+    id: 'granola-2',
+    platform: 'granola',
+    externalId: 'msg-008',
+    threadId: 'thread-008',
     sender: {
-      name: 'Rachel Kim',
+      name: 'Granola',
     },
-    subject: 'Job Opportunity',
-    preview: 'Hi! I came across your profile and thought you\'d be a great fit for a role at our company...',
-    content: `Hi!
+    subject: 'Meeting Notes: 1:1 with Manager',
+    preview: 'Discussion about career growth, upcoming projects, and team dynamics...',
+    content: `Meeting Notes: 1:1 with Manager
+Date: Jan 14, 2024
 
-I came across your profile and thought you'd be a great fit for a Senior Developer role at our company.
+Topics Discussed:
+- Career growth path and goals for 2024
+- Upcoming project assignments
+- Team dynamics and collaboration
 
-We're a growing startup in the fintech space, and we're looking for talented developers to join our team.
-
-Would you be interested in learning more?
-
-Best,
-Rachel Kim
-Tech Recruiter at FinTech Solutions`,
-    timestamp: '2024-01-15T09:00:00Z',
-    isUnread: true,
-    thread: [
-      {
-        id: 'linkedin-1-1',
-        sender: { name: 'Rachel Kim' },
-        content: 'Hi! I came across your profile and thought you\'d be a great fit for a Senior Developer role at our company.',
-        timestamp: '2024-01-15T09:00:00Z',
-      },
-    ],
-  },
-  {
-    id: 'linkedin-2',
-    platform: 'linkedin',
-    sender: {
-      name: 'Tom Bradley',
-    },
-    subject: 'Connection Request',
-    preview: 'Great meeting you at the conference last week! Would love to stay connected.',
-    content: 'Great meeting you at the conference last week! Would love to stay connected and perhaps grab coffee sometime.',
-    timestamp: '2024-01-14T14:00:00Z',
+Follow-ups:
+- Schedule skip-level meeting by end of month
+- Review updated job ladder document
+- Prepare self-review draft`,
+    receivedAt: '2024-01-14T15:00:00Z',
     isUnread: false,
-  },
-  {
-    id: 'linkedin-3',
-    platform: 'linkedin',
-    sender: {
-      name: 'Jenny Martinez',
-    },
-    subject: 'Collaboration Opportunity',
-    preview: 'I saw your recent post about freelancing. Would you be interested in partnering on a project?',
-    content: `Hi there!
-
-I saw your recent post about freelancing and loved your insights. I'm working on a similar project and thought we might be able to collaborate.
-
-Would you be open to a quick chat to explore this further?
-
-Thanks!
-Jenny`,
-    timestamp: '2024-01-13T11:00:00Z',
-    isUnread: true,
   },
 ];
