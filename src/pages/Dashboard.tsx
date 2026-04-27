@@ -13,6 +13,7 @@ import { TaskBoard } from '../components/TaskBoard';
 type ActiveView = 'ask_omni' | 'needs_reply' | 'task_board';
 
 const TASKS_STORAGE_KEY = 'omnibox_tasks';
+const TASKS_FINGERPRINT_KEY = 'omnibox_tasks_fingerprint';
 
 function loadStoredTasks(): ExtractedTask[] {
   try {
@@ -26,6 +27,10 @@ function saveStoredTasks(tasks: ExtractedTask[]) {
   localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
 }
 
+function loadStoredFingerprint(): string {
+  return localStorage.getItem(TASKS_FINGERPRINT_KEY) || '';
+}
+
 export function Dashboard() {
   const { user, logout, googleAccessToken } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -35,7 +40,7 @@ export function Dashboard() {
   const [activeView, setActiveView] = useState<ActiveView>('needs_reply');
   const [tasks, setTasks] = useState<ExtractedTask[]>(loadStoredTasks);
   const [tasksLoading, setTasksLoading] = useState(false);
-  const [lastEmailFingerprint, setLastEmailFingerprint] = useState('');
+  const [lastEmailFingerprint, setLastEmailFingerprint] = useState(loadStoredFingerprint);
 
   useEffect(() => {
     fetchIntegrations();
@@ -45,14 +50,23 @@ export function Dashboard() {
     saveStoredTasks(tasks);
   }, [tasks]);
 
-  // Re-extract tasks whenever the email set changes
+  // Clear stale tasks immediately when emails change, then re-extract
   useEffect(() => {
-    if (gmailLoading || emails.length === 0) return;
+    if (gmailLoading) return;
 
-    const fingerprint = emails.map((e) => e.id).sort().join(',');
+    const fingerprint = emails.length > 0
+      ? emails.map((e) => e.id).sort().join(',')
+      : '';
+
     if (fingerprint === lastEmailFingerprint) return;
 
+    // Immediately clear old tasks so badge/UI updates right away
+    setTasks([]);
     setLastEmailFingerprint(fingerprint);
+    localStorage.setItem(TASKS_FINGERPRINT_KEY, fingerprint);
+
+    if (emails.length === 0) return;
+
     setTasksLoading(true);
 
     extractTasksFromEmails(
@@ -65,20 +79,7 @@ export function Dashboard() {
       }))
     )
       .then((extractedTasks) => {
-        setTasks((prev) => {
-          const userEdits = new Map(
-            prev
-              .filter((t) => t.done || t.severity !== t.severity)
-              .map((t) => [t.sourceEmailId, t])
-          );
-          return extractedTasks.map((t) => {
-            const existing = userEdits.get(t.sourceEmailId);
-            if (existing) {
-              return { ...t, done: existing.done, severity: existing.severity, dueDate: existing.dueDate };
-            }
-            return t;
-          });
-        });
+        setTasks(extractedTasks);
       })
       .catch((err) => console.error('Task extraction failed:', err))
       .finally(() => setTasksLoading(false));
