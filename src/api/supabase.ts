@@ -9,7 +9,27 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+const supabaseUrlFinal = supabaseUrl || 'http://localhost:54321';
+
 export const supabase = createClient(
-  supabaseUrl || 'http://localhost:54321',
+  supabaseUrlFinal,
   supabaseAnonKey || 'placeholder'
 );
+
+// Get the app URL for OAuth redirects
+export function getAppUrl(): string {
+  if (typeof window === 'undefined') {
+    return 'http://localhost:5173';
+  }
+  
+  const { protocol, hostname } = window.location;
+  
+  // In production on Render, hostname will be something like "omnibox-app.onrender.com"
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    // Production: https://yourrenderapp.onrender.com
+    return `${protocol}//${hostname}`;
+  }
+  
+  // Development: http://localhost:5173
+  return `${protocol}//${hostname}:5173`;
+}

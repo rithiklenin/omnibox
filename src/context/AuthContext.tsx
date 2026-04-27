@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { supabase } from '../api/supabase';
+import { supabase, getAppUrl } from '../api/supabase';
 import type { User } from '../types';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         scopes:
           'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
-        redirectTo: `${window.location.origin}/settings`,
+        redirectTo: `${getAppUrl()}/settings`,
       },
     });
   };
