@@ -12,23 +12,29 @@ import { TaskBoard } from '../components/TaskBoard';
 
 type ActiveView = 'ask_omni' | 'needs_reply' | 'task_board';
 
-const TASKS_STORAGE_KEY = 'omnibox_tasks';
-const TASKS_FINGERPRINT_KEY = 'omnibox_tasks_fingerprint';
+function getUserStorageKey(userId: string, key: string): string {
+  return `omnibox_${userId}_${key}`;
+}
 
-function loadStoredTasks(): ExtractedTask[] {
+function loadStoredTasks(userId: string): ExtractedTask[] {
   try {
-    const stored = localStorage.getItem(TASKS_STORAGE_KEY);
+    const stored = localStorage.getItem(getUserStorageKey(userId, 'tasks'));
     if (stored) return JSON.parse(stored);
   } catch {}
   return [];
 }
 
-function saveStoredTasks(tasks: ExtractedTask[]) {
-  localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+function saveStoredTasks(userId: string, tasks: ExtractedTask[]) {
+  localStorage.setItem(getUserStorageKey(userId, 'tasks'), JSON.stringify(tasks));
 }
 
-function loadStoredFingerprint(): string {
-  return localStorage.getItem(TASKS_FINGERPRINT_KEY) || '';
+function loadStoredFingerprint(userId: string): string {
+  return localStorage.getItem(getUserStorageKey(userId, 'fingerprint')) || '';
+}
+
+function clearUserStorage(userId: string) {
+  localStorage.removeItem(getUserStorageKey(userId, 'tasks'));
+  localStorage.removeItem(getUserStorageKey(userId, 'fingerprint'));
 }
 
 export function Dashboard() {
@@ -38,17 +44,25 @@ export function Dashboard() {
   const { gmailActions, emails, loading: gmailLoading } = useGmailMessages();
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [activeView, setActiveView] = useState<ActiveView>('needs_reply');
-  const [tasks, setTasks] = useState<ExtractedTask[]>(loadStoredTasks);
+  const userId = user?.id || 'anonymous';
+  const [tasks, setTasks] = useState<ExtractedTask[]>(() => loadStoredTasks(userId));
   const [tasksLoading, setTasksLoading] = useState(false);
-  const [lastEmailFingerprint, setLastEmailFingerprint] = useState(loadStoredFingerprint);
+  const [lastEmailFingerprint, setLastEmailFingerprint] = useState(() => loadStoredFingerprint(userId));
 
   useEffect(() => {
     fetchIntegrations();
   }, [fetchIntegrations]);
 
+  // Clear tasks and reload when user changes
   useEffect(() => {
-    saveStoredTasks(tasks);
-  }, [tasks]);
+    setTasks(loadStoredTasks(userId));
+    setLastEmailFingerprint(loadStoredFingerprint(userId));
+    setDismissedIds(new Set());
+  }, [userId]);
+
+  useEffect(() => {
+    saveStoredTasks(userId, tasks);
+  }, [userId, tasks]);
 
   // Clear stale tasks immediately when emails change, then re-extract
   useEffect(() => {
@@ -63,7 +77,7 @@ export function Dashboard() {
     // Immediately clear old tasks so badge/UI updates right away
     setTasks([]);
     setLastEmailFingerprint(fingerprint);
-    localStorage.setItem(TASKS_FINGERPRINT_KEY, fingerprint);
+    localStorage.setItem(getUserStorageKey(userId, 'fingerprint'), fingerprint);
 
     if (emails.length === 0) return;
 
