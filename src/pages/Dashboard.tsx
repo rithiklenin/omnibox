@@ -35,7 +35,9 @@ export function Dashboard() {
   const [activeView, setActiveView] = useState<ActiveView>('needs_reply');
   const [tasks, setTasks] = useState<ExtractedTask[]>(loadStoredTasks);
   const [tasksLoading, setTasksLoading] = useState(false);
-  const [tasksExtracted, setTasksExtracted] = useState(false);
+  const [processedEmailIds, setProcessedEmailIds] = useState<Set<string>>(() => {
+    return new Set(loadStoredTasks().map((t) => t.sourceEmailId));
+  });
 
   useEffect(() => {
     fetchIntegrations();
@@ -45,18 +47,16 @@ export function Dashboard() {
     saveStoredTasks(tasks);
   }, [tasks]);
 
-  // Auto-extract tasks from emails
+  // Auto-extract tasks from emails — re-runs whenever emails list changes
   useEffect(() => {
-    if (tasksExtracted || gmailLoading || emails.length === 0) return;
+    if (gmailLoading || emails.length === 0) return;
 
-    const existingSourceIds = new Set(tasks.map((t) => t.sourceEmailId));
-    const newEmails = emails.filter((e) => !existingSourceIds.has(e.id));
-    if (newEmails.length === 0) {
-      setTasksExtracted(true);
-      return;
-    }
+    const newEmails = emails.filter((e) => !processedEmailIds.has(e.id));
+    if (newEmails.length === 0) return;
 
     setTasksLoading(true);
+    const newIds = new Set(newEmails.map((e) => e.id));
+
     extractTasksFromEmails(
       newEmails.map((e) => ({
         id: e.id,
@@ -70,11 +70,15 @@ export function Dashboard() {
         if (newTasks.length > 0) {
           setTasks((prev) => [...prev, ...newTasks]);
         }
-        setTasksExtracted(true);
+        setProcessedEmailIds((prev) => {
+          const updated = new Set(prev);
+          newIds.forEach((id) => updated.add(id));
+          return updated;
+        });
       })
       .catch((err) => console.error('Task extraction failed:', err))
       .finally(() => setTasksLoading(false));
-  }, [emails, gmailLoading, tasks, tasksExtracted]);
+  }, [emails, gmailLoading, processedEmailIds]);
 
   const actions = useMemo(() => {
     const base = googleAccessToken ? gmailActions : mockActions;

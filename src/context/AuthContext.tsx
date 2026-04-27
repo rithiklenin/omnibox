@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         scopes:
           'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
-        redirectTo: `${getAppUrl()}/settings`,
+        redirectTo: `${getAppUrl()}/`,
       },
     });
   };
