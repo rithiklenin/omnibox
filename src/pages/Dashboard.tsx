@@ -35,9 +35,7 @@ export function Dashboard() {
   const [activeView, setActiveView] = useState<ActiveView>('needs_reply');
   const [tasks, setTasks] = useState<ExtractedTask[]>(loadStoredTasks);
   const [tasksLoading, setTasksLoading] = useState(false);
-  const [processedEmailIds, setProcessedEmailIds] = useState<Set<string>>(() => {
-    return new Set(loadStoredTasks().map((t) => t.sourceEmailId));
-  });
+  const [lastEmailFingerprint, setLastEmailFingerprint] = useState('');
 
   useEffect(() => {
     fetchIntegrations();
@@ -47,18 +45,18 @@ export function Dashboard() {
     saveStoredTasks(tasks);
   }, [tasks]);
 
-  // Auto-extract tasks from emails — re-runs whenever emails list changes
+  // Re-extract tasks whenever the email set changes
   useEffect(() => {
     if (gmailLoading || emails.length === 0) return;
 
-    const newEmails = emails.filter((e) => !processedEmailIds.has(e.id));
-    if (newEmails.length === 0) return;
+    const fingerprint = emails.map((e) => e.id).sort().join(',');
+    if (fingerprint === lastEmailFingerprint) return;
 
+    setLastEmailFingerprint(fingerprint);
     setTasksLoading(true);
-    const newIds = new Set(newEmails.map((e) => e.id));
 
     extractTasksFromEmails(
-      newEmails.map((e) => ({
+      emails.map((e) => ({
         id: e.id,
         subject: e.subject,
         sender: e.senderName,
@@ -66,19 +64,25 @@ export function Dashboard() {
         receivedAt: e.receivedAt,
       }))
     )
-      .then((newTasks) => {
-        if (newTasks.length > 0) {
-          setTasks((prev) => [...prev, ...newTasks]);
-        }
-        setProcessedEmailIds((prev) => {
-          const updated = new Set(prev);
-          newIds.forEach((id) => updated.add(id));
-          return updated;
+      .then((extractedTasks) => {
+        setTasks((prev) => {
+          const userEdits = new Map(
+            prev
+              .filter((t) => t.done || t.severity !== t.severity)
+              .map((t) => [t.sourceEmailId, t])
+          );
+          return extractedTasks.map((t) => {
+            const existing = userEdits.get(t.sourceEmailId);
+            if (existing) {
+              return { ...t, done: existing.done, severity: existing.severity, dueDate: existing.dueDate };
+            }
+            return t;
+          });
         });
       })
       .catch((err) => console.error('Task extraction failed:', err))
       .finally(() => setTasksLoading(false));
-  }, [emails, gmailLoading, processedEmailIds]);
+  }, [emails, gmailLoading, lastEmailFingerprint]);
 
   const actions = useMemo(() => {
     const base = googleAccessToken ? gmailActions : mockActions;
