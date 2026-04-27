@@ -76,9 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    const userId = user?.id;
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    setGoogleAccessToken(null);
+    // Clear all user-scoped data from localStorage
+    if (userId) {
+      localStorage.removeItem(`omnibox_${userId}_tasks`);
+      localStorage.removeItem(`omnibox_${userId}_fingerprint`);
+    }
+    localStorage.removeItem('omnibox_integrations');
   };
 
   return (
