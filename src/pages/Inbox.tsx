@@ -5,16 +5,13 @@ import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
 import { MessageList } from '../components/MessageList';
 import { MessageViewer } from '../components/MessageViewer';
-import type { AIResponse } from '../utils/aiResponses';
 
 export function Inbox() {
   const [activeFilter, setActiveFilter] = useState<Platform | 'all'>('all');
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [draftEmail, setDraftEmail] = useState<AIResponse['draftEmail'] | null>(null);
 
-  // Check if mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -24,7 +21,6 @@ export function Inbox() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Filter messages based on active filter
   const filteredMessages = useMemo(() => {
     if (activeFilter === 'all') {
       return mockMessages;
@@ -32,21 +28,18 @@ export function Inbox() {
     return mockMessages.filter((m) => m.platform === activeFilter);
   }, [activeFilter]);
 
-  // Sort by timestamp (newest first)
   const sortedMessages = useMemo(() => {
     return [...filteredMessages].sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      (a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
     );
   }, [filteredMessages]);
 
-  // Calculate unread counts
   const unreadCounts = useMemo(() => {
     const counts: Record<Platform | 'all', number> = {
       all: 0,
-      email: 0,
+      gmail: 0,
       slack: 0,
-      whatsapp: 0,
-      linkedin: 0,
+      granola: 0,
     };
 
     mockMessages.forEach((message) => {
@@ -61,20 +54,10 @@ export function Inbox() {
 
   const handleSelectMessage = (message: Message) => {
     setSelectedMessage(message);
-    setDraftEmail(null);
   };
 
   const handleCloseViewer = () => {
     setSelectedMessage(null);
-  };
-
-  const handleOpenDraft = (draft: NonNullable<AIResponse['draftEmail']>) => {
-    setSelectedMessage(null);
-    setDraftEmail(draft);
-  };
-
-  const handleCloseDraft = () => {
-    setDraftEmail(null);
   };
 
   return (
@@ -100,7 +83,6 @@ export function Inbox() {
           onClose={() => setSidebarOpen(false)}
           selectedMessage={selectedMessage}
           onSelectMessage={handleSelectMessage}
-          onOpenDraft={handleOpenDraft}
         />
 
         {/* Message List */}
@@ -128,17 +110,14 @@ export function Inbox() {
         </div>
 
         {/* Message Viewer */}
-        {(!isMobile || selectedMessage || draftEmail) && (
+        {(!isMobile || selectedMessage) && (
           <MessageViewer
             message={selectedMessage}
             onClose={handleCloseViewer}
             isMobile={isMobile}
-            draftEmail={draftEmail}
-            onCloseDraft={handleCloseDraft}
           />
         )}
       </div>
-
     </div>
   );
 }
