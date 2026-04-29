@@ -32,10 +32,6 @@ function loadStoredFingerprint(userId: string): string {
   return localStorage.getItem(getUserStorageKey(userId, 'fingerprint')) || '';
 }
 
-function clearUserStorage(userId: string) {
-  localStorage.removeItem(getUserStorageKey(userId, 'tasks'));
-  localStorage.removeItem(getUserStorageKey(userId, 'fingerprint'));
-}
 
 export function Dashboard() {
   const { user, logout, googleAccessToken } = useAuth();
