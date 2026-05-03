@@ -128,7 +128,7 @@ function SortableTaskRow({
           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{task.description}</p>
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <PlatformIcon platform="gmail" className="w-3 h-3" />
+          <PlatformIcon platform={task.sourcePlatform || 'gmail'} className="w-3 h-3" />
           <span className="text-xs text-gray-400 dark:text-gray-500 truncate">
             {task.sourceSender} — {task.sourceSubject}
           </span>

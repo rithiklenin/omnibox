@@ -9,6 +9,7 @@ export interface ExtractedTask {
   sourceEmailId: string;
   sourceSubject: string;
   sourceSender: string;
+  sourcePlatform: 'gmail' | 'slack';
   done: boolean;
   order: number;
 }
@@ -19,6 +20,7 @@ interface EmailForExtraction {
   sender: string;
   snippet: string;
   receivedAt: string;
+  platform?: 'gmail' | 'slack';
 }
 
 export async function extractTasksFromEmails(
@@ -113,6 +115,7 @@ If no tasks found, return an empty array: []`,
           sourceEmailId: sourceEmail?.id || '',
           sourceSubject: sourceEmail?.subject || '',
           sourceSender: sourceEmail?.sender || '',
+          sourcePlatform: sourceEmail?.platform || 'gmail',
           done: false,
           order: i,
         };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { slackApi } from '../api/slackProxy';
 import type { ActionItem } from '../types';
 
 export interface SlackMessageData {
@@ -36,7 +37,7 @@ function slackMessageToAction(msg: SlackMessageData): ActionItem {
 }
 
 export function useSlackMessages() {
-  const { slackAccessToken, user } = useAuth();
+  const { slackAccessToken } = useAuth();
   const [slackActions, setSlackActions] = useState<ActionItem[]>([]);
   const [slackMessages, setSlackMessages] = useState<SlackMessageData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,10 +51,7 @@ export function useSlackMessages() {
 
     try {
       const userCache: Record<string, string> = {};
-      const usersRes = await fetch('https://slack.com/api/users.list?limit=200', {
-        headers: { Authorization: `Bearer ${slackAccessToken}` },
-      });
-      const usersData = await usersRes.json();
+      const usersData = await slackApi(slackAccessToken, 'users.list', { limit: '200' }) as { ok: boolean; members?: { id: string; real_name?: string; name?: string }[] };
       if (usersData.ok) {
         for (const u of usersData.members || []) {
           userCache[u.id] = u.real_name || u.name || u.id;
@@ -61,36 +59,30 @@ export function useSlackMessages() {
       }
 
       let authUserId: string | null = null;
-      const authRes = await fetch('https://slack.com/api/auth.test', {
-        headers: { Authorization: `Bearer ${slackAccessToken}` },
-      });
-      const authData = await authRes.json();
+      const authData = await slackApi(slackAccessToken, 'auth.test') as { ok: boolean; user_id?: string };
       if (authData.ok) {
-        authUserId = authData.user_id;
+        authUserId = authData.user_id || null;
       }
 
-      const convRes = await fetch(
-        'https://slack.com/api/conversations.list?types=public_channel,private_channel,im,mpim&limit=50',
-        { headers: { Authorization: `Bearer ${slackAccessToken}` } }
-      );
-      const convData = await convRes.json();
+      const convData = await slackApi(slackAccessToken, 'conversations.list', {
+        types: 'public_channel,private_channel,im,mpim',
+        limit: '50',
+      }) as { ok: boolean; error?: string; channels?: { id: string; name?: string; is_im?: boolean }[] };
+
       if (!convData.ok) {
         throw new Error(`Slack API error: ${convData.error}`);
       }
 
       const allMessages: SlackMessageData[] = [];
-      const oneDayAgo = String((Date.now() - 24 * 60 * 60 * 1000) / 1000);
+      const twoWeeksAgo = String((Date.now() - 14 * 24 * 60 * 60 * 1000) / 1000);
 
       for (const channel of (convData.channels || []).slice(0, 20)) {
-        const histUrl = new URL('https://slack.com/api/conversations.history');
-        histUrl.searchParams.set('channel', channel.id);
-        histUrl.searchParams.set('oldest', oneDayAgo);
-        histUrl.searchParams.set('limit', '10');
+        const histData = await slackApi(slackAccessToken, 'conversations.history', {
+          channel: channel.id,
+          oldest: twoWeeksAgo,
+          limit: '50',
+        }) as { ok: boolean; error?: string; messages?: { subtype?: string; user?: string; username?: string; text?: string; ts: string; thread_ts?: string }[] };
 
-        const histRes = await fetch(histUrl.toString(), {
-          headers: { Authorization: `Bearer ${slackAccessToken}` },
-        });
-        const histData = await histRes.json();
         if (!histData.ok) continue;
 
         for (const msg of histData.messages || []) {
@@ -104,7 +96,7 @@ export function useSlackMessages() {
             id: `${channel.id}-${msg.ts}`,
             channelId: channel.id,
             channelName: channel.name || 'DM',
-            senderName: userCache[msg.user] || msg.username || 'Unknown',
+            senderName: userCache[msg.user || ''] || msg.username || 'Unknown',
             senderPlatformId: msg.user || '',
             content: text,
             preview: text.slice(0, 200),
@@ -120,7 +112,7 @@ export function useSlackMessages() {
         (a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
       );
 
-      const limited = allMessages.slice(0, 20);
+      const limited = allMessages.slice(0, 50);
       setSlackMessages(limited);
       setSlackActions(limited.map(slackMessageToAction));
     } catch (err) {
@@ -129,7 +121,7 @@ export function useSlackMessages() {
     } finally {
       setLoading(false);
     }
-  }, [slackAccessToken, user?.email]);
+  }, [slackAccessToken]);
 
   useEffect(() => {
     fetchSlackMessages();

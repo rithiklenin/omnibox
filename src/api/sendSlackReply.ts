@@ -1,3 +1,5 @@
+import { slackApi } from './slackProxy';
+
 interface SendSlackReplyParams {
   accessToken: string;
   channelId: string;
@@ -11,24 +13,15 @@ export async function sendSlackReply({
   text,
   threadTs,
 }: SendSlackReplyParams): Promise<void> {
-  const body: Record<string, string> = {
+  const params: Record<string, string> = {
     channel: channelId,
     text,
   };
   if (threadTs) {
-    body.thread_ts = threadTs;
+    params.thread_ts = threadTs;
   }
 
-  const res = await fetch('https://slack.com/api/chat.postMessage', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-
-  const data = await res.json();
+  const data = await slackApi(accessToken, 'chat.postMessage', params) as { ok: boolean; error?: string };
   if (!data.ok) {
     throw new Error(`Slack API error: ${data.error}`);
   }
