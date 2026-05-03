@@ -56,7 +56,7 @@ For each task, provide:
 - title: A short task title (max 80 chars)
 - description: Brief context about what needs to be done
 - severity: One of "urgent", "high", "medium", "low" based on deadline proximity and importance
-- dueDate: ISO 8601 date string if a deadline is mentioned or can be reasonably inferred, otherwise null
+- dueDate: ISO 8601 date string (YYYY-MM-DD). ALWAYS assign a due date — never null.
 - sourceEmailIndex: The email number (1-based) this task came from
 
 Rules:
@@ -65,6 +65,12 @@ Rules:
 - If an email asks for a reply, that IS a task
 - If an email mentions a deadline, set severity accordingly
 - Today's date is ${new Date().toISOString().split('T')[0]}
+- ALWAYS assign a dueDate. Use these guidelines when no explicit deadline is mentioned:
+  - urgent tasks: today or tomorrow
+  - high severity: within 2-3 days
+  - medium severity: within 5-7 days
+  - low severity: within 1-2 weeks
+  - If the email date provides context (e.g. someone asked a question 3 days ago), factor in how long they've been waiting
 
 Respond ONLY with a JSON array. No explanation. Example:
 [{"title":"Review Q2 budget proposal","description":"Sarah needs feedback on budget allocation","severity":"high","dueDate":"2026-04-28","sourceEmailIndex":1}]
