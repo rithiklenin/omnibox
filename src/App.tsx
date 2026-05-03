@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Settings } from './pages/Settings';
+import { SlackCallback } from './pages/SlackCallback';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,6 +29,7 @@ function App() {
           path="/login"
           element={isAuthenticated ? <Navigate to="/" /> : <Login />}
         />
+        <Route path="/slack/callback" element={<SlackCallback />} />
         <Route
           path="/settings"
           element={

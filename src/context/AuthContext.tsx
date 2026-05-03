@@ -8,9 +8,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   googleAccessToken: string | null;
+  slackAccessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   signInWithGoogle: () => Promise<void>;
+  connectSlack: () => void;
+  disconnectSlack: () => void;
+  setSlackToken: (token: string) => void;
   signInDemo: (email: string) => void;
   logout: () => Promise<void>;
 }
@@ -26,18 +30,37 @@ function mapSupabaseUser(su: SupabaseUser): User {
   };
 }
 
+const SLACK_TOKEN_KEY = 'omnibox_slack_token';
+const GOOGLE_TOKEN_KEY = 'omnibox_google_token';
+const DEMO_USER_KEY = 'omnibox_demo_user';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
+  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(
+    () => localStorage.getItem(GOOGLE_TOKEN_KEY)
+  );
+  const [slackAccessToken, setSlackAccessToken] = useState<string | null>(
+    () => localStorage.getItem(SLACK_TOKEN_KEY)
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ? mapSupabaseUser(session.user) : null);
+      if (session?.user) {
+        setUser(mapSupabaseUser(session.user));
+      } else {
+        const storedDemo = localStorage.getItem(DEMO_USER_KEY);
+        if (storedDemo) {
+          try {
+            setUser(JSON.parse(storedDemo));
+          } catch {}
+        }
+      }
       if (session?.provider_token) {
         setGoogleAccessToken(session.provider_token);
+        localStorage.setItem(GOOGLE_TOKEN_KEY, session.provider_token);
       }
       setIsLoading(false);
     });
@@ -46,9 +69,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user ? mapSupabaseUser(session.user) : null);
+      if (session?.user) {
+        setUser(mapSupabaseUser(session.user));
+      }
       if (session?.provider_token) {
         setGoogleAccessToken(session.provider_token);
+        localStorage.setItem(GOOGLE_TOKEN_KEY, session.provider_token);
       }
     });
 
@@ -66,13 +92,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const connectSlack = () => {
+    const clientId = import.meta.env.VITE_SLACK_CLIENT_ID;
+    if (!clientId) {
+      console.error('VITE_SLACK_CLIENT_ID is not set');
+      alert('Slack integration is not configured. Please contact support.');
+      return;
+    }
+    const scopes = 'channels:history,channels:read,im:history,im:read,mpim:history,mpim:read,groups:history,groups:read,users:read,chat:write';
+    const redirectUri = `${getAppUrl()}/slack/callback`;
+    window.location.href = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  };
+
+  const disconnectSlack = () => {
+    setSlackAccessToken(null);
+    localStorage.removeItem(SLACK_TOKEN_KEY);
+  };
+
+  const setSlackToken = (token: string) => {
+    setSlackAccessToken(token);
+    localStorage.setItem(SLACK_TOKEN_KEY, token);
+  };
+
   const signInDemo = (email: string) => {
     const name = email
       .split('@')[0]
       .replace(/[._]/g, ' ')
       .replace(/\b\w/g, (l) => l.toUpperCase());
-    setUser({ id: 'demo', name, email });
+    const demoUser = { id: 'demo', name, email };
+    setUser(demoUser);
     setSession(null);
+    localStorage.setItem(DEMO_USER_KEY, JSON.stringify(demoUser));
   };
 
   const logout = async () => {
@@ -81,12 +131,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setGoogleAccessToken(null);
-    // Clear all user-scoped data from localStorage
+    setSlackAccessToken(null);
+    localStorage.removeItem(GOOGLE_TOKEN_KEY);
+    localStorage.removeItem(SLACK_TOKEN_KEY);
     if (userId) {
       localStorage.removeItem(`omnibox_${userId}_tasks`);
       localStorage.removeItem(`omnibox_${userId}_fingerprint`);
     }
     localStorage.removeItem('omnibox_integrations');
+    localStorage.removeItem(DEMO_USER_KEY);
   };
 
   return (
@@ -95,9 +148,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         googleAccessToken,
+        slackAccessToken,
         isAuthenticated: !!user,
         isLoading,
         signInWithGoogle,
+        connectSlack,
+        disconnectSlack,
+        setSlackToken,
         signInDemo,
         logout,
       }}

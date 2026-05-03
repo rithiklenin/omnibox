@@ -30,6 +30,7 @@ export function getAppUrl(): string {
     return `${protocol}//${hostname}`;
   }
   
-  // Development: http://localhost:5173
-  return `${protocol}//${hostname}:5173`;
+  // Development: use the actual port
+  const { port } = window.location;
+  return `${protocol}//${hostname}${port ? `:${port}` : ''}`;
 }

@@ -1,4 +1,4 @@
-export type Platform = 'gmail';
+export type Platform = 'gmail' | 'slack';
 
 export interface Message {
   id: string;

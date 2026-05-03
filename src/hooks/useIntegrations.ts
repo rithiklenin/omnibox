@@ -6,7 +6,16 @@ const STORAGE_KEY = 'omnibox_integrations';
 function loadIntegrations(): Integration[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed: Integration[] = JSON.parse(stored);
+      const defaults = getDefaultIntegrations();
+      for (const def of defaults) {
+        if (!parsed.some((i) => i.platform === def.platform)) {
+          parsed.push(def);
+        }
+      }
+      return parsed;
+    }
   } catch {}
   return getDefaultIntegrations();
 }
@@ -20,6 +29,13 @@ function getDefaultIntegrations(): Integration[] {
     {
       id: 'int-gmail',
       platform: 'gmail',
+      status: 'disconnected',
+      lastSyncedAt: null,
+      platformMetadata: {},
+    },
+    {
+      id: 'int-slack',
+      platform: 'slack',
       status: 'disconnected',
       lastSyncedAt: null,
       platformMetadata: {},
