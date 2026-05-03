@@ -93,12 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const connectSlack = () => {
-    const clientId = import.meta.env.VITE_SLACK_CLIENT_ID;
-    if (!clientId) {
-      console.error('VITE_SLACK_CLIENT_ID is not set');
-      alert('Slack integration is not configured. Please contact support.');
-      return;
-    }
+    const clientId = import.meta.env.VITE_SLACK_CLIENT_ID || '3466552141911.11037334784531';
     const userScopes = 'channels:history,channels:read,im:history,im:read,mpim:history,mpim:read,groups:history,groups:read,users:read,chat:write';
     const redirectUri = `${getAppUrl()}/slack/callback`;
     window.location.href = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&user_scope=${userScopes}&redirect_uri=${encodeURIComponent(redirectUri)}`;
