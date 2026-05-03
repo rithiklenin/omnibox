@@ -1,30 +1,36 @@
 import { useState } from 'react';
 import type { ActionItem } from '../types';
 import type { GmailEmailData } from '../hooks/useGmailMessages';
+import type { SlackMessageData } from '../hooks/useSlackMessages';
 import { ActionCard } from './ActionCard';
 import { PlatformIcon } from './PlatformIcon';
 import { generateReply } from '../api/generateReply';
 import { sendGmailReply } from '../api/sendGmailReply';
+import { sendSlackReply } from '../api/sendSlackReply';
 
 interface NeedsReplyProps {
   actions: ActionItem[];
   emails: GmailEmailData[];
+  slackMessages: SlackMessageData[];
   onMarkDone: (id: string) => void;
   onDismiss: (id: string) => void;
   onReplySent: (id: string) => void;
   loading?: boolean;
   googleAccessToken: string | null;
+  slackAccessToken: string | null;
   userName: string;
 }
 
 export function NeedsReply({
   actions,
   emails,
+  slackMessages,
   onMarkDone,
   onDismiss,
   onReplySent,
   loading,
   googleAccessToken,
+  slackAccessToken,
   userName,
 }: NeedsReplyProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -44,20 +50,62 @@ export function NeedsReply({
     return emails.find((e) => e.id === action.sourceMessageId);
   };
 
-  const handleGenerateReply = async (action: ActionItem) => {
-    const email = getEmailForAction(action);
-    if (!email) return;
+  const getSlackMessageForAction = (action: ActionItem): SlackMessageData | undefined => {
+    return slackMessages.find((m) => m.id === action.sourceMessageId);
+  };
 
+  const canReply = (action: ActionItem): boolean => {
+    if (action.sourcePlatform === 'gmail') {
+      return !!getEmailForAction(action) && !!googleAccessToken;
+    }
+    if (action.sourcePlatform === 'slack') {
+      return !!getSlackMessageForAction(action) && !!slackAccessToken;
+    }
+    return false;
+  };
+
+  const getReplyRecipient = (action: ActionItem): string => {
+    if (action.sourcePlatform === 'gmail') {
+      const email = getEmailForAction(action);
+      return email ? `${email.senderName} (${email.senderEmail})` : '';
+    }
+    if (action.sourcePlatform === 'slack') {
+      const msg = getSlackMessageForAction(action);
+      if (!msg) return '';
+      return msg.isDm ? msg.senderName : `#${msg.channelName}`;
+    }
+    return '';
+  };
+
+  const handleGenerateReply = async (action: ActionItem) => {
     setGeneratingId(action.id);
     try {
-      const reply = await generateReply({
-        senderName: email.senderName,
-        subject: email.subject,
-        emailContent: email.snippet,
-        userName,
-      });
-      setDraftReplies((prev) => ({ ...prev, [action.id]: reply }));
-      setEditingReply((prev) => ({ ...prev, [action.id]: reply }));
+      if (action.sourcePlatform === 'slack') {
+        const msg = getSlackMessageForAction(action);
+        if (!msg) return;
+        const reply = await generateReply({
+          senderName: msg.senderName,
+          subject: msg.isDm ? 'Direct Message' : `#${msg.channelName}`,
+          emailContent: msg.content,
+          userName,
+          platform: 'slack',
+          channelName: msg.channelName,
+        });
+        setDraftReplies((prev) => ({ ...prev, [action.id]: reply }));
+        setEditingReply((prev) => ({ ...prev, [action.id]: reply }));
+      } else {
+        const email = getEmailForAction(action);
+        if (!email) return;
+        const reply = await generateReply({
+          senderName: email.senderName,
+          subject: email.subject,
+          emailContent: email.snippet,
+          userName,
+          platform: 'gmail',
+        });
+        setDraftReplies((prev) => ({ ...prev, [action.id]: reply }));
+        setEditingReply((prev) => ({ ...prev, [action.id]: reply }));
+      }
     } catch (err) {
       console.error('Failed to generate reply:', err);
     } finally {
@@ -66,22 +114,32 @@ export function NeedsReply({
   };
 
   const handleSendReply = async (action: ActionItem) => {
-    const email = getEmailForAction(action);
-    if (!email || !googleAccessToken) return;
-
     const replyText = editingReply[action.id] || draftReplies[action.id];
     if (!replyText?.trim()) return;
 
     setSendingId(action.id);
     try {
-      await sendGmailReply({
-        accessToken: googleAccessToken,
-        to: email.senderEmail,
-        subject: email.subject,
-        body: replyText,
-        threadId: email.threadId,
-        messageId: email.id,
-      });
+      if (action.sourcePlatform === 'slack') {
+        const msg = getSlackMessageForAction(action);
+        if (!msg || !slackAccessToken) return;
+        await sendSlackReply({
+          accessToken: slackAccessToken,
+          channelId: msg.channelId,
+          text: replyText,
+          threadTs: msg.threadTs || undefined,
+        });
+      } else {
+        const email = getEmailForAction(action);
+        if (!email || !googleAccessToken) return;
+        await sendGmailReply({
+          accessToken: googleAccessToken,
+          to: email.senderEmail,
+          subject: email.subject,
+          body: replyText,
+          threadId: email.threadId,
+          messageId: email.id,
+        });
+      }
       setDraftReplies((prev) => {
         const next = { ...prev };
         delete next[action.id];
@@ -126,7 +184,7 @@ export function NeedsReply({
 
         {/* Source filters */}
         <div className="flex items-center gap-1">
-          {(['gmail'] as const).map((platform) => {
+          {(['gmail', 'slack'] as const).map((platform) => {
             const count = actions.filter((a) => a.sourcePlatform === platform).length;
             if (count === 0) return null;
             return (
@@ -156,7 +214,6 @@ export function NeedsReply({
               const draft = draftReplies[action.id];
               const isGenerating = generatingId === action.id;
               const isSending = sendingId === action.id;
-              const email = getEmailForAction(action);
 
               return (
                 <div key={action.id}>
@@ -170,7 +227,7 @@ export function NeedsReply({
                         handleGenerateReply(action);
                       }
                     }}
-                    showReplyButton={!!email && !!googleAccessToken}
+                    showReplyButton={canReply(action)}
                   />
 
                   {/* Reply panel */}
@@ -184,8 +241,9 @@ export function NeedsReply({
                       ) : draft ? (
                         <>
                           <div className="flex items-center gap-2 mb-2">
+                            <PlatformIcon platform={action.sourcePlatform} className="w-3.5 h-3.5" />
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                              To: {email?.senderName} ({email?.senderEmail})
+                              To: {getReplyRecipient(action)}
                             </span>
                           </div>
                           <textarea

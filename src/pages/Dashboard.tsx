@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useIntegrations } from '../hooks/useIntegrations';
 import { useGmailMessages } from '../hooks/useGmailMessages';
+import { useSlackMessages } from '../hooks/useSlackMessages';
 import { extractTasksFromEmails, type ExtractedTask } from '../api/extractTasks';
 import { mockActions } from '../data/actions';
 import { AskOmni } from '../components/AskOmni';
@@ -32,16 +33,12 @@ function loadStoredFingerprint(userId: string): string {
   return localStorage.getItem(getUserStorageKey(userId, 'fingerprint')) || '';
 }
 
-function clearUserStorage(userId: string) {
-  localStorage.removeItem(getUserStorageKey(userId, 'tasks'));
-  localStorage.removeItem(getUserStorageKey(userId, 'fingerprint'));
-}
-
 export function Dashboard() {
-  const { user, logout, googleAccessToken } = useAuth();
+  const { user, logout, googleAccessToken, slackAccessToken } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { integrations, fetchIntegrations } = useIntegrations();
   const { gmailActions, emails, loading: gmailLoading } = useGmailMessages();
+  const { slackActions, slackMessages, loading: slackLoading } = useSlackMessages();
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [activeView, setActiveView] = useState<ActiveView>('needs_reply');
   const userId = user?.id || 'anonymous';
@@ -64,45 +61,56 @@ export function Dashboard() {
     saveStoredTasks(userId, tasks);
   }, [userId, tasks]);
 
-  // Clear stale tasks immediately when emails change, then re-extract
+  // Clear stale tasks immediately when messages change, then re-extract
   useEffect(() => {
-    if (gmailLoading) return;
+    if (gmailLoading || slackLoading) return;
 
-    const fingerprint = emails.length > 0
-      ? emails.map((e) => e.id).sort().join(',')
-      : '';
+    const emailIds = emails.map((e) => e.id).sort().join(',');
+    const slackIds = slackMessages.map((m) => m.id).sort().join(',');
+    const fingerprint = `${emailIds}|${slackIds}`;
 
     if (fingerprint === lastEmailFingerprint) return;
 
-    // Immediately clear old tasks so badge/UI updates right away
     setTasks([]);
     setLastEmailFingerprint(fingerprint);
     localStorage.setItem(getUserStorageKey(userId, 'fingerprint'), fingerprint);
 
-    if (emails.length === 0) return;
-
-    setTasksLoading(true);
-
-    extractTasksFromEmails(
-      emails.map((e) => ({
+    const allMessages = [
+      ...emails.map((e) => ({
         id: e.id,
         subject: e.subject,
         sender: e.senderName,
         snippet: e.snippet,
         receivedAt: e.receivedAt,
-      }))
-    )
+      })),
+      ...slackMessages.map((m) => ({
+        id: m.id,
+        subject: m.isDm ? `DM from ${m.senderName}` : `#${m.channelName}`,
+        sender: m.senderName,
+        snippet: m.preview,
+        receivedAt: m.receivedAt,
+      })),
+    ];
+
+    if (allMessages.length === 0) return;
+
+    setTasksLoading(true);
+
+    extractTasksFromEmails(allMessages)
       .then((extractedTasks) => {
         setTasks(extractedTasks);
       })
       .catch((err) => console.error('Task extraction failed:', err))
       .finally(() => setTasksLoading(false));
-  }, [emails, gmailLoading, lastEmailFingerprint]);
+  }, [emails, slackMessages, gmailLoading, slackLoading, lastEmailFingerprint]);
 
   const actions = useMemo(() => {
-    const base = googleAccessToken ? gmailActions : mockActions;
+    const hasAnyIntegration = googleAccessToken || slackAccessToken;
+    const base = hasAnyIntegration
+      ? [...gmailActions, ...slackActions]
+      : mockActions;
     return base.filter((a) => !dismissedIds.has(a.id));
-  }, [googleAccessToken, gmailActions, dismissedIds]);
+  }, [googleAccessToken, slackAccessToken, gmailActions, slackActions, dismissedIds]);
 
   const needsReplyActions = useMemo(
     () => actions.filter((a) => a.category === 'pending_reply'),
@@ -269,11 +277,13 @@ export function Dashboard() {
           <NeedsReply
             actions={needsReplyActions}
             emails={emails}
+            slackMessages={slackMessages}
             onMarkDone={handleMarkDone}
             onDismiss={handleDismiss}
             onReplySent={handleReplySent}
-            loading={gmailLoading}
+            loading={gmailLoading || slackLoading}
             googleAccessToken={googleAccessToken}
+            slackAccessToken={slackAccessToken}
             userName={user?.name || 'Me'}
           />
         )}
