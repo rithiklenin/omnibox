@@ -3,18 +3,21 @@ import type { Integration, Platform } from '../types';
 
 const STORAGE_KEY = 'omnibox_integrations';
 
+const VALID_PLATFORMS: Platform[] = ['gmail', 'slack'];
+
 function loadIntegrations(): Integration[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed: Integration[] = JSON.parse(stored);
+      const filtered = parsed.filter((i) => VALID_PLATFORMS.includes(i.platform));
       const defaults = getDefaultIntegrations();
       for (const def of defaults) {
-        if (!parsed.some((i) => i.platform === def.platform)) {
-          parsed.push(def);
+        if (!filtered.some((i) => i.platform === def.platform)) {
+          filtered.push(def);
         }
       }
-      return parsed;
+      return filtered;
     }
   } catch {}
   return getDefaultIntegrations();

@@ -99,9 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       alert('Slack integration is not configured. Please contact support.');
       return;
     }
-    const scopes = 'channels:history,channels:read,im:history,im:read,mpim:history,mpim:read,groups:history,groups:read,users:read,chat:write';
+    const userScopes = 'channels:history,channels:read,im:history,im:read,mpim:history,mpim:read,groups:history,groups:read,users:read,chat:write';
     const redirectUri = `${getAppUrl()}/slack/callback`;
-    window.location.href = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    window.location.href = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&user_scope=${userScopes}&redirect_uri=${encodeURIComponent(redirectUri)}`;
   };
 
   const disconnectSlack = () => {

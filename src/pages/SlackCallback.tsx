@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../api/supabase';
+import { getAppUrl } from '../api/supabase';
 
 export function SlackCallback() {
   const navigate = useNavigate();
@@ -35,24 +35,27 @@ export function SlackCallback() {
 
     async function exchangeCode() {
       try {
-        const { data, error: fnError } = await supabase.functions.invoke(
-          'smart-api',
-          { body: { code, userId: user!.id } }
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smart-api`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({ code, userId: user!.id, redirectUri: `${getAppUrl()}/slack/callback` }),
+          }
         );
 
-        console.log('Slack OAuth response:', { data, fnError });
+        const data = await res.json();
+        console.log('Slack OAuth response:', data);
 
-        if (fnError) {
-          setError(`Failed to connect Slack: ${fnError.message}`);
-          return;
-        }
-
-        if (data?.error) {
+        if (data.error) {
           setError(`Slack error: ${data.error}`);
           return;
         }
 
-        if (data?.access_token) {
+        if (data.access_token) {
           setSlackToken(data.access_token);
         }
 

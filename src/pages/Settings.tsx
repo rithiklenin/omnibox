@@ -83,10 +83,16 @@ function ConnectGmailModal({ onConnect, onClose }: { onConnect: (email: string) 
 }
 
 export function Settings() {
-  const { user, logout, connectSlack, disconnectSlack, slackAccessToken } = useAuth();
+  const { user, logout, connectSlack, disconnectSlack, slackAccessToken, googleAccessToken } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { integrations, connectPlatform, disconnectIntegration } = useIntegrations();
   const [connectingPlatform, setConnectingPlatform] = useState<Platform | null>(null);
+
+  useEffect(() => {
+    if (googleAccessToken && user?.email) {
+      connectPlatform('gmail', { email: user.email });
+    }
+  }, [googleAccessToken, user?.email, connectPlatform]);
 
   useEffect(() => {
     if (slackAccessToken) {
@@ -178,6 +184,7 @@ export function Settings() {
           <div className="space-y-3">
             {integrations.map((integration) => {
               const config = platformConfig[integration.platform];
+              if (!config) return null;
               const badge = statusBadge[integration.status];
               const isConnected = integration.status === 'connected' || integration.status === 'syncing';
 
@@ -213,19 +220,19 @@ export function Settings() {
                       ) : null}
                     </div>
                     <div className="flex-shrink-0">
-                      {isConnected || (integration.platform === 'slack' && slackAccessToken) ? (
-                        <button
-                          onClick={() => {
-                            if (integration.platform === 'slack') {
-                              handleDisconnectSlack();
-                            } else {
-                              disconnectIntegration(integration.platform);
-                            }
-                          }}
-                          className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                        >
-                          Disconnect
-                        </button>
+                      {isConnected || (integration.platform === 'slack' && slackAccessToken) || (integration.platform === 'gmail' && googleAccessToken) ? (
+                        integration.platform === 'slack' ? (
+                          <button
+                            onClick={handleDisconnectSlack}
+                            className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                          >
+                            Disconnect
+                          </button>
+                        ) : (
+                          <span className="px-4 py-2 text-sm font-medium text-green-600 dark:text-green-400">
+                            Connected via Google
+                          </span>
+                        )
                       ) : (
                         <button
                           onClick={() => {

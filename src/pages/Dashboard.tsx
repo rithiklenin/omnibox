@@ -82,6 +82,7 @@ export function Dashboard() {
         sender: e.senderName,
         snippet: e.snippet,
         receivedAt: e.receivedAt,
+        platform: 'gmail' as const,
       })),
       ...slackMessages.map((m) => ({
         id: m.id,
@@ -89,6 +90,7 @@ export function Dashboard() {
         sender: m.senderName,
         snippet: m.preview,
         receivedAt: m.receivedAt,
+        platform: 'slack' as const,
       })),
     ];
 
@@ -105,9 +107,12 @@ export function Dashboard() {
   }, [emails, slackMessages, gmailLoading, slackLoading, lastEmailFingerprint]);
 
   const actions = useMemo(() => {
-    const hasAnyIntegration = googleAccessToken || slackAccessToken;
-    const base = hasAnyIntegration
-      ? [...gmailActions, ...slackActions]
+    const liveActions = [
+      ...(googleAccessToken ? gmailActions : []),
+      ...(slackAccessToken ? slackActions : []),
+    ];
+    const base = liveActions.length > 0 || googleAccessToken || slackAccessToken
+      ? liveActions
       : mockActions;
     return base.filter((a) => !dismissedIds.has(a.id));
   }, [googleAccessToken, slackAccessToken, gmailActions, slackActions, dismissedIds]);

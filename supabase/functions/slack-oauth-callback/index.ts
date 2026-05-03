@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { code, userId } = await req.json();
+    const { code, userId, redirectUri } = await req.json();
 
     if (!code || !userId) {
       return new Response(
@@ -30,14 +30,19 @@ Deno.serve(async (req) => {
       );
     }
 
+    const params: Record<string, string> = {
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+    };
+    if (redirectUri) {
+      params.redirect_uri = redirectUri;
+    }
+
     const tokenRes = await fetch('https://slack.com/api/oauth.v2.access', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-      }),
+      body: new URLSearchParams(params),
     });
 
     const tokenData = await tokenRes.json();
